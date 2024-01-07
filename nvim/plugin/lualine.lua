@@ -1,6 +1,3 @@
-local navic = require('nvim-navic')
-navic.setup()
-
 ---Indicators for special modes,
 ---@return string status
 local function extra_mode_status()
@@ -22,61 +19,78 @@ local function extra_mode_status()
   return ''
 end
 
+local main_color = 'StatusLine'
+
+local sections_colors = {
+	a = main_color,
+	b = main_color,
+	c = main_color,
+	x = main_color,
+	y = main_color,
+	z = main_color,
+}
+local mono_theme = {
+	normal = sections_colors,
+	insert = sections_colors,
+	visual = sections_colors,
+	replace = sections_colors,
+	command = sections_colors,
+	inactive = sections_colors,
+}
+
+local function location()
+	return 'Ln %l,Col %c'
+end
+
+local function get_package_info()
+	return require('package-info').get_status()
+end
+
+local function get_lsp_names()
+	local hide = {'null-ls', 'emmet_language_server' }
+	local client_names = vim.lsp.get_clients({ buffer = 0})
+
+	local names = ''
+	for _, client in ipairs(client_names) do
+	  if not vim.tbl_contains(hide, client.name) then
+		  names = names .. client.name
+	  end
+ 	end
+
+	return vim.trim(names)
+end
+
+local lsp_status = {
+	'lsp_progress',
+	separators = {
+		lsp_client_name = { pre = '', post = ''},
+	},
+	hide = {'null-ls', 'emmet_language_server', 'eslint' },
+	spinner_symbols = { '✶', '✸', '✹', '✺', '✹', '✸', '✷' },
+	only_show_attaced = true,
+	display_components = { 'spinner' },
+	timer = {
+		lsp_client_name_enddelay = 0
+	},
+}
+
 require('lualine').setup {
-  globalstatus = true,
+  options = {
+	  globalstatus = true,
+	  component_separators = { left = '', right = ''},
+	  section_separators = { left = '', right = ''},
+	  theme = mono_theme,
+  },
   sections = {
-    lualine_c = {
-      -- nvim-navic
-      { navic.get_location, cond = navic.is_available },
-    },
+	lualine_a = { 'diagnostics' },
+    lualine_b = { 'mode', 'branch', 'diff' },
+	lualine_c = { get_lsp_names, lsp_status, get_package_info},
+	lualine_x = { location },
+	lualine_y = { "filetype" },
     lualine_z = {
-      -- (see above)
+	  "os.date('%I:%M %p')",
       { extra_mode_status },
     },
   },
-  options = {
-    theme = 'auto',
-  },
-  -- Example top tabline configuration (this may clash with other plugins)
-  -- tabline = {
-  --   lualine_a = {
-  --     {
-  --       'tabs',
-  --       mode = 1,
-  --     },
-  --   },
-  --   lualine_b = {
-  --     {
-  --       'buffers',
-  --       show_filename_only = true,
-  --       show_bufnr = true,
-  --       mode = 4,
-  --       filetype_names = {
-  --         TelescopePrompt = 'Telescope',
-  --         dashboard = 'Dashboard',
-  --         fzf = 'FZF',
-  --       },
-  --       buffers_color = {
-  --         -- Same values as the general color option can be used here.
-  --         active = 'lualine_b_normal', -- Color for active buffer.
-  --         inactive = 'lualine_b_inactive', -- Color for inactive buffer.
-  --       },
-  --     },
-  --   },
-  --   lualine_c = {},
-  --   lualine_x = {},
-  --   lualine_y = {},
-  --   lualine_z = {},
-  -- },
-  winbar = {
-    lualine_z = {
-      {
-        'filename',
-        path = 1,
-        file_status = true,
-        newfile_status = true,
-      },
-    },
-  },
-  extensions = { 'fugitive', 'fzf', 'toggleterm', 'quickfix' },
+  extensions = { 'fugitive', 'fzf', 'toggleterm', 'quickfix', 'man', 'neo-tree' },
 }
